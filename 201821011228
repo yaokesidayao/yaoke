@@ -1,0 +1,93 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <cmath>
+
+// 中文分词函数
+std::vector<std::string> split(const std::string& text) {
+    // 使用适当的分词库或算法来实现中文分词
+    // 这里只是一个示例，使用空格作为分隔符进行简单分词
+    std::vector<std::string> words;
+    std::string word;
+    for (char c : text) {
+        if (c == ' ') {
+            if (!word.empty()) {
+                words.push_back(word);
+                word.clear();
+            }
+        } else {
+            word += c;
+        }
+    }
+    if (!word.empty()) {
+        words.push_back(word);
+    }
+    return words;
+}
+
+// 计算词频函数
+std::unordered_map<std::string, int> calculateWordFrequency(const std::vector<std::string>& words) {
+    std::unordered_map<std::string, int> wordFrequency;
+    for (const std::string& word : words) {
+        ++wordFrequency[word];
+    }
+    return wordFrequency;
+}
+
+// 计算余弦相似度函数
+double calculateCosineSimilarity(const std::unordered_map<std::string, int>& originalWordFrequency, const std::unordered_map<std::string, int>& copiedWordFrequency) {
+    double dotProduct = 0.0;
+    double originalMagnitude = 0.0;
+    double copiedMagnitude = 0.0;
+
+    // 计算内积和向量模的乘积
+    for (const auto& entry : originalWordFrequency) {
+        const std::string& word = entry.first;
+        int originalFrequency = entry.second;
+        int copiedFrequency = copiedWordFrequency.at(word);
+
+        dotProduct += originalFrequency * copiedFrequency;
+        originalMagnitude += originalFrequency * originalFrequency;
+        copiedMagnitude += copiedFrequency * copiedFrequency;
+    }
+
+    // 计算余弦相似度
+    return dotProduct / (sqrt(originalMagnitude) * sqrt(copiedMagnitude));
+}
+
+int main(int argc, char* argv[]) {
+    // 从命令行参数获取文件路径
+    std::string originalFilePath = argv[1];
+    std::string copiedFilePath = argv[2];
+    std::string outputFilePath = argv[3];
+
+    // 读取原文文件
+    std::ifstream originalFile(originalFilePath);
+    std::string originalText((std::istreambuf_iterator<char>(originalFile)), std::istreambuf_iterator<char>());
+    originalFile.close();
+
+    // 读取抄袭版论文文件
+    std::ifstream copiedFile(copiedFilePath);
+    std::string copiedText((std::istreambuf_iterator<char>(copiedFile)), std::istreambuf_iterator<char>());
+    copiedFile.close();
+
+    // 中文分词
+    std::vector<std::string> originalWords = split(originalText);
+    std::vector<std::string> copiedWords = split(copiedText);
+
+    // 计算词频
+    std::unordered_map<std::string, int> originalWordFrequency = calculateWordFrequency(originalWords);
+    std::unordered_map<std::string, int> copiedWordFrequency = calculateWordFrequency(copiedWords);
+
+    // 计算余弦相似度
+    double cosineSimilarity = calculateCosineSimilarity(originalWordFrequency, copiedWordFrequency);
+
+    // 写入答案文件
+    std::ofstream outputFile(outputFilePath);
+    outputFile << std::fixed << std::setprecision(2) << cosineSimilarity;
+    outputFile.close();
+
+    return 0;
+}
